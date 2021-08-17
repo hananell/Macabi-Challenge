@@ -18,7 +18,7 @@ class myDataset(Dataset):
         super(myDataset, self).__init__()
         self.IDs = [sample[0] for sample in dataEncoded]
         self.tensors = [sample[1][0] for sample in dataEncoded]
-        self.labels = [sample[1][1][labelNum - 1] for sample in dataEncoded]  # -1 because we expect 1,2,3 and want 0,1,2
+        self.labels = torch.FloatTensor([sample[1][1][labelNum - 1] for sample in dataEncoded])  # -1 because we expect 1,2,3 and want 0,1,2
 
     def __getitem__(self, ind):
         return self.IDs[ind], self.tensors[ind], self.labels[ind]
@@ -44,7 +44,7 @@ class Classifier(nn.Module):
             nn.BatchNorm1d(40),
         )
         self.layer3 = nn.Sequential(
-            nn.Linear(40, 3),
+            nn.Linear(40, 1),
             nn.Sigmoid()
         )
 
