@@ -1,7 +1,11 @@
 from csv import reader
+import numpy as np
 import torch
-from torch import nn
 import classifier
+import time
+startTime = time.time()
+use_cuda = torch.cuda.is_available()
+# use_cuda = False
 
 # Read the data from the file and return dict
 def readData():
@@ -116,12 +120,13 @@ def encodeData(dataDict):
         encoded_LDLCholesterol_AT_BASELINE = encodeRegressiveOrNA(patientData["LDLCholesterol_AT_BASELINE"])
         encoded_Triglycerides_AT_BASELINE = encodeRegressiveOrNA(patientData["Triglycerides_AT_BASELINE"])
         encoded_PTH_AT_BASELINE = encodeRegressiveOrNA(patientData["PTH_AT_BASELINE"])
-        encoded_all = torch.FloatTensor(encoded_IS_MALE + encoded_AGE_AT_SDATE + encoded_AGE_GROUP + encoded_SES_GROUP + encoded_MIGZAR + encoded_IS_HYPERTENSION + encoded_SE_HYPERTENSION + \
+        encoded_all = encoded_IS_MALE + encoded_AGE_AT_SDATE + encoded_AGE_GROUP + encoded_SES_GROUP + encoded_MIGZAR + encoded_IS_HYPERTENSION + encoded_SE_HYPERTENSION + \
                       encoded_IS_ISCHEMIC_MI + encoded_SE_ISCHEMIC_MI + encoded_IS_CVA_TIA + encoded_SE_CVA_TIA + encoded_IS_DEMENTIA + encoded_SE_DEMENTIA + encoded_IS_ART_SCLE_GEN + encoded_SE_ART_SCLE_GEN + \
                       encoded_IS_TROMBOPHILIA + encoded_SE_TROMBOPHILIA + encoded_IS_IBD + encoded_SE_IBD + encoded_BMI_AT_BASELINE + encoded_SYSTOLA_AT_BASELINE + encoded_DIASTOLA_AT_BASELINE + encoded_Creatinine_B_AT_BASELINE + \
                       encoded_Albumin_B_AT_BASELINE + encoded_Urea_B_AT_BASELINE + encoded_Glucose_B_AT_BASELINE + encoded_HbA1C_AT_BASELINE + encoded_RBCRed_Blood_Cells_AT_BASELINE + encoded_Hemoglobin_AT_BASELINE + \
                       encoded_Ferritin_AT_BASELINE + encoded_AST_GOT_AT_BASELINE + encoded_ALT_GPT_AT_BASELINE + encoded_Bilirubin_Total_AT_BASELINE + encoded_Na_Sodium_B_AT_BASELINE + encoded_K_Potassium_B_AT_BASELINE + \
-                      encoded_CaCalcium_B_AT_BASELINE + encoded_HDLCholesterol_AT_BASELINE + encoded_LDLCholesterol_AT_BASELINE + encoded_Triglycerides_AT_BASELINE + encoded_PTH_AT_BASELINE)
+                      encoded_CaCalcium_B_AT_BASELINE + encoded_HDLCholesterol_AT_BASELINE + encoded_LDLCholesterol_AT_BASELINE + encoded_Triglycerides_AT_BASELINE + encoded_PTH_AT_BASELINE
+        encoded_all = torch.tensor(encoded_all, device=torch.device('cuda') if use_cuda else torch.device('cpu'))
         label1 = 1 if float(patientData["TIME_CRF"]) <= 2 and int(patientData["EVENT_CRF"]) == 1 else 0
         label2 = 1 if float(patientData["TIME_CRF"]) <= 5 and int(patientData["EVENT_CRF"]) == 1 else 0
         label3 = 1 if float(patientData["TIME_CRF"]) <= 10 and int(patientData["EVENT_CRF"]) == 1 else 0
@@ -134,9 +139,19 @@ if __name__ == '__main__':
     # read and encode data
     dataRaw = readData()
     dataEncoded = encodeData(dataRaw)
+    dataEncodedList = np.array(list(dataEncoded.items()), dtype=list)
 
-    # make models, then use them to predict labels of all he data
-    model1, model2, model3 = classifier.makeClassifier(list(dataEncoded.items()))
+    # make models, then use them to predict labels of all the data
+    model1, model2, model3 = classifier.makeClassifier(dataEncodedList)
+
     ##### tests
+
+    # print run time
+    minutes = (time.time() - startTime) / 60
+    print(f"\n--- {minutes:.1f} minutes ---")
+    if use_cuda:
+        print("with cuda")
+    else:
+        print("without cuda")
 
 
