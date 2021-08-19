@@ -143,10 +143,7 @@ if __name__ == '__main__':
 
     # make models, then use them to predict labels of all the data
     model = classifier.makeClassifier(dataEncodedList)
-    model = torch.load("modelFile")
     classifier.test(model, dataEncodedList)
-
-    ##### tests
 
     # print run time
     minutes = (time.time() - startTime) / 60
