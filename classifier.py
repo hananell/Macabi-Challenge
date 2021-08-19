@@ -161,10 +161,8 @@ def makeClassifier(dataEncoded):
             trainLoss.append(curTrainLoss)
             valLoss.append(curValLoss)
 
-    # make loss_list[i] mean of epoch[i] from all folds
+    # make loss_list[i] mean of epoch[i] from all folds, and plot graphs
     trainLoss, valLoss = foldMean(trainLoss), foldMean(valLoss)
-
-    # plot graphs
     plotLoss(trainLoss, valLoss)
 
     return model
