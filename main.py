@@ -142,7 +142,9 @@ if __name__ == '__main__':
     dataEncodedList = np.array(list(dataEncoded.items()), dtype=list)
 
     # make models, then use them to predict labels of all the data
-    model1, model2, model3 = classifier.makeClassifier(dataEncodedList)
+    model = classifier.makeClassifier(dataEncodedList)
+    model = torch.load("modelFile")
+    classifier.test(model, dataEncodedList)
 
     ##### tests
 
