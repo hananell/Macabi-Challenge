@@ -13,7 +13,7 @@ device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 
 # hyper parameters
 lr = 0.01
-epochs = 8
+epochs = 15
 batchSize = 500
 
 
