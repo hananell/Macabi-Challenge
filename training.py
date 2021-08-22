@@ -1,4 +1,5 @@
 import torch
+from numpy.ma import copy
 from torch import nn
 from sklearn.model_selection import KFold
 import matplotlib.pyplot as plt
@@ -6,12 +7,15 @@ from torch.utils.data import DataLoader
 import torch.utils.data as data_utils
 import numpy as np
 
+from model import Classifier
+
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 # hyper parameters
 lr = 0.01
-epochs = 10
+epochs = 8
 batchSize = 500
+
 
 # plot curves for train and validation losses
 def plotLoss(trainLoss, valLoss):
@@ -47,11 +51,12 @@ def train(model, optimizer, train_loader, criterion):
         optimizer.step()
         total_loss += loss.item()
         total_length += x_batch.shape[0]
-    return total_loss/total_length
+    return total_loss / total_length
 
 
 # validation
 def validation(model, val_loader, criterion):
+
     model.eval()
     total_loss, total_length = 0, 0
     with torch.no_grad():
@@ -59,38 +64,34 @@ def validation(model, val_loader, criterion):
             output = model(x_batch)
             loss = criterion(output, y_batch.view_as(output))
             total_loss += loss.item()
-            total_length += len(x_batch)
             total_length += x_batch.shape[0]
     return total_loss / total_length
 
 
-def fit(model, x, y):
+def init_fit(x, y):
     # results lists
     train_loss, val_loss = [], []
 
     # run k-fold
-    k_fold = KFold(n_splits=3, random_state=777, shuffle=True)
-    for train_idx, val_idx in k_fold.split(x, y):
+    k_fold = KFold(n_splits=4, random_state=777, shuffle=True)
+    for foldNum, (train_idx, val_idx) in enumerate(k_fold.split(x, y)):
+        print("fold", foldNum+1)
         # split data to train and validation
         x_train, x_val, y_train, y_val = x.iloc[train_idx].values, x.iloc[val_idx].values, y.iloc[train_idx].values, y.iloc[val_idx].values
 
-        # create tensors from Dataframes
-        train_dataset = data_utils.TensorDataset(torch.FloatTensor(x_train), torch.FloatTensor(y_train))
-        val_dataset = data_utils.TensorDataset(torch.FloatTensor(x_val), torch.FloatTensor(y_val))
-
+        # create tensors from Dataframes, and DataLoaders
+        train_dataset = data_utils.TensorDataset(torch.tensor(x_train, dtype=torch.float, device=device), torch.tensor(y_train, dtype=torch.float, device=device))
+        val_dataset = data_utils.TensorDataset(torch.tensor(x_val, dtype=torch.float, device=device), torch.tensor(y_val, dtype=torch.float, device=device))
         train_loader, val_loader = DataLoader(train_dataset, batch_size=batchSize), DataLoader(val_dataset, batch_size=batchSize)
+        # init model
+        model = Classifier(input_size=len(x.columns)).to(device)
 
-        model.to(device=device)
         optimizer = torch.optim.SGD(model.parameters(), lr=lr)
-
-        model.train()
         criterion = nn.BCELoss()
-
         train_loss, val_loss = [], []
 
         # training loop
         for epoch in range(epochs):
-            print("\tMLPs epoch", epoch)
             # train
             cur_train_loss = train(model, optimizer, train_loader, criterion)
 
@@ -103,7 +104,6 @@ def fit(model, x, y):
 
     # make loss_list[i] mean of epoch[i] from all folds, and plot graphs
     mean_trainloss, mean_valloss = foldMean(train_loss), foldMean(val_loss)
-
     plotLoss(mean_trainloss, mean_valloss)
 
     return model

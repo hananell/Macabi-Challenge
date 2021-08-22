@@ -27,9 +27,6 @@ def normalize_columns(df):
 
 
 def encode_data(df):
-    # drop id column
-    df.drop(columns=['IDS'], inplace=True)
-
     # encode crf for 2,5,10 years
     encoded_target = encode_target(df[['EVENT_CRF', 'TIME_CRF']])
     df.drop(columns=['EVENT_CRF', 'TIME_CRF'], inplace=True)

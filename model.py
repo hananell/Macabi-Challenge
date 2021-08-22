@@ -1,21 +1,21 @@
 from torch import nn
 
 
-# MLP for binary classification
+# MLP for binary classification of 3 the time horizons
 class Classifier(nn.Module):
     def __init__(self, input_size):
         super(Classifier, self).__init__()
         self.layer1 = nn.Sequential(
             nn.Linear(input_size, 500),
             nn.ReLU(),
-            # nn.Dropout(),
-            # nn.BatchNorm1d(300),
+            nn.Dropout(),
+            # nn.BatchNorm1d(500),
         )
         self.layer2 = nn.Sequential(
             nn.Linear(500, 200),
             nn.ReLU(),
-            # nn.Dropout(),
-            # nn.BatchNorm1d(40),
+            nn.Dropout(),
+            # nn.BatchNorm1d(200),
         )
         self.layer3 = nn.Sequential(
             nn.Linear(200, 40),
@@ -25,7 +25,7 @@ class Classifier(nn.Module):
         )
         self.layer4 = nn.Sequential(
             nn.Linear(40, 3),
-            nn.Sigmoid() ,
+            nn.Sigmoid(),
         )
 
     def forward(self, x):
