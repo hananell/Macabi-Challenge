@@ -6,13 +6,13 @@ class Classifier(nn.Module):
     def __init__(self, input_size):
         super(Classifier, self).__init__()
         self.layer1 = nn.Sequential(
-            nn.Linear(input_size, 2000),
+            nn.Linear(input_size, 1000),
             nn.ReLU(),
             #nn.Dropout(),
-            nn.BatchNorm1d(2000),
+            nn.BatchNorm1d(1000),
         )
         self.layer2 = nn.Sequential(
-            nn.Linear(2000, 400),
+            nn.Linear(1000, 400),
             nn.ReLU(),
             #nn.Dropout(),
             nn.BatchNorm1d(400),
