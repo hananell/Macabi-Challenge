@@ -68,6 +68,22 @@ def validation(model, val_loader, criterion):
     return total_loss / total_length
 
 
+# duplicate samples that contain a 1 label
+def duplicate_ills(x_train, y_train):
+    duplicated_x, duplicated_y = np.copy(x_train), np.copy(y_train)
+
+    # for each (vector, labels) if the labels contain 1, add the (vector, label) to duplicated arrays
+    for i, (x, y) in enumerate(zip(x_train, y_train)):
+        if 1 in y:
+            x = np.expand_dims(x, axis=0)
+            y = np.expand_dims(y, axis=0)
+            duplicated_x = np.append(duplicated_x, x, axis=0)
+            duplicated_y = np.append(duplicated_y, y, axis=0)
+
+    return duplicated_x, duplicated_y
+
+
+
 def init_fit(x, y):
     # results lists
     train_loss, val_loss = [], []
@@ -78,6 +94,7 @@ def init_fit(x, y):
         print("fold", foldNum+1)
         # split data to train and validation
         x_train, x_val, y_train, y_val = x.iloc[train_idx].values, x.iloc[val_idx].values, y.iloc[train_idx].values, y.iloc[val_idx].values
+        #x_train, y_train = duplicate_ills(x_train, y_train)
 
         # create tensors from Dataframes, and DataLoaders
         train_dataset = data_utils.TensorDataset(torch.tensor(x_train, dtype=torch.float, device=device), torch.tensor(y_train, dtype=torch.float, device=device))

@@ -14,6 +14,7 @@ data_path = "diab_ckd_data.csv"
 if __name__ == '__main__':
     # read and encode data
     data = pd.read_csv(data_path)
+
     IDs = data.pop("IDS").tolist()      # save IDs for test. and we don't need them till then
     encoded_data, encoded_target = encode_data(data)
 
