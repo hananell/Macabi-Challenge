@@ -12,8 +12,8 @@ from model import Classifier
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 # hyper parameters
-lr = 0.01
-epochs = 15
+lr = 0.02
+epochs = 10
 batchSize = 500
 
 
