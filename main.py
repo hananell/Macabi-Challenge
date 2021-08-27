@@ -20,9 +20,10 @@ if __name__ == '__main__':
     encoded_data, encoded_target = encode_data(data)
 
     # split the data to train and test
-    x_train, x_test, y_train, y_test = train_test_split(encoded_data, encoded_target, test_size=0.97)
+    x_train, x_test, y_train, y_test = train_test_split(encoded_data, encoded_target, test_size=0.25)
 
     mpl_classifier = model.Classifier(input_size=len(encoded_data.columns)).to(device)
+
     # make models, then use them to predict labels of all the data
     mean_trainloss, mean_valloss = training.cross_validate(mpl_classifier, x_train, y_train)
     training.plotLoss(mean_trainloss, mean_valloss)
