@@ -5,6 +5,7 @@ from data_preprocessing import encode_data
 import training
 import time
 import model
+import eval
 
 startTime = time.time()
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -21,13 +22,13 @@ if __name__ == '__main__':
     # split the data to train and test
     x_train, x_test, y_train, y_test = train_test_split(encoded_data, encoded_target, test_size=0.97)
 
-    mpl_classifier = model.Classifier(input_size=len(encoded_data.columns))
+    mpl_classifier = model.Classifier(input_size=len(encoded_data.columns)).to(device)
     # make models, then use them to predict labels of all the data
     mean_trainloss, mean_valloss = training.cross_validate(mpl_classifier, x_train, y_train)
     training.plotLoss(mean_trainloss, mean_valloss)
 
 
-    # eval.predict(mpl_classifier, x_test, y_test, IDs)
+    eval.predict(mpl_classifier, x_test, y_test, IDs)
 
     # print run time
     minutes = (time.time() - startTime) / 60
