@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import torch.utils.data as data_utils
 import numpy as np
+from imblearn.over_sampling import RandomOverSampler
 
-from model import Classifier
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -15,6 +15,8 @@ device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 lr = 0.02
 epochs = 10
 batchSize = 500
+n_splits = 4
+oversampling = False
 
 
 # plot curves for train and validation losses
@@ -40,7 +42,7 @@ def foldMean(allLosses):
 
 
 # training loop - one epoch
-def train(model, optimizer, train_loader, criterion):
+def train_epoch(model, optimizer, train_loader, criterion):
     model.train()
     total_loss, total_length = 0, 0
     for x_batch, y_batch in train_loader:
@@ -55,8 +57,7 @@ def train(model, optimizer, train_loader, criterion):
 
 
 # validation
-def validation(model, val_loader, criterion):
-
+def valid_epoch(model, val_loader, criterion):
     model.eval()
     total_loss, total_length = 0, 0
     with torch.no_grad():
@@ -83,37 +84,43 @@ def duplicate_ills(x_train, y_train):
     return duplicated_x, duplicated_y
 
 
-
-def init_fit(x, y):
+def cross_validate(model, x, y):
     # results lists
     train_loss, val_loss = [], []
 
     # run k-fold
-    k_fold = KFold(n_splits=4, random_state=777, shuffle=True)
+    k_fold = KFold(n_splits=n_splits, random_state=777, shuffle=True)
     for foldNum, (train_idx, val_idx) in enumerate(k_fold.split(x, y)):
-        print("fold", foldNum+1)
+        print("fold", foldNum + 1)
         # split data to train and validation
-        x_train, x_val, y_train, y_val = x.iloc[train_idx].values, x.iloc[val_idx].values, y.iloc[train_idx].values, y.iloc[val_idx].values
-        #x_train, y_train = duplicate_ills(x_train, y_train)
+        x_train, x_val, y_train, y_val = x.iloc[train_idx].values, x.iloc[val_idx].values, y.iloc[train_idx].values, \
+                                         y.iloc[val_idx].values
+        if oversampling:
+            ros = RandomOverSampler(random_state=42)
+            x_train, y_train = ros.fit_resample(x_train, y_train)
+        # x_train, y_train = duplicate_ills(x_train, y_train)
 
         # create tensors from Dataframes, and DataLoaders
-        train_dataset = data_utils.TensorDataset(torch.tensor(x_train, dtype=torch.float, device=device), torch.tensor(y_train, dtype=torch.float, device=device))
-        val_dataset = data_utils.TensorDataset(torch.tensor(x_val, dtype=torch.float, device=device), torch.tensor(y_val, dtype=torch.float, device=device))
-        train_loader, val_loader = DataLoader(train_dataset, batch_size=batchSize), DataLoader(val_dataset, batch_size=batchSize)
-        # init model
-        model = Classifier(input_size=len(x.columns)).to(device)
+        train_dataset = data_utils.TensorDataset(torch.tensor(x_train, dtype=torch.float, device=device),
+                                                 torch.tensor(y_train, dtype=torch.float, device=device))
+        val_dataset = data_utils.TensorDataset(torch.tensor(x_val, dtype=torch.float, device=device),
+                                               torch.tensor(y_val, dtype=torch.float, device=device))
+        train_loader, val_loader = DataLoader(train_dataset, batch_size=batchSize), DataLoader(val_dataset,
+                                                                                               batch_size=batchSize)
 
         optimizer = torch.optim.SGD(model.parameters(), lr=lr)
         criterion = nn.BCELoss()
         train_loss, val_loss = [], []
 
+        model.weight_reset()
+
         # training loop
         for epoch in range(epochs):
             # train
-            cur_train_loss = train(model, optimizer, train_loader, criterion)
+            cur_train_loss = train_epoch(model, optimizer, train_loader, criterion)
 
             # evaluate on validation set
-            cur_val_loss = validation(model, val_loader, criterion)
+            cur_val_loss = valid_epoch(model, val_loader, criterion)
 
             # save values in lists
             train_loss.append(cur_train_loss)
@@ -121,6 +128,23 @@ def init_fit(x, y):
 
     # make loss_list[i] mean of epoch[i] from all folds, and plot graphs
     mean_trainloss, mean_valloss = foldMean(train_loss), foldMean(val_loss)
-    plotLoss(mean_trainloss, mean_valloss)
+
+    return mean_trainloss, mean_valloss
+
+
+def fit(model, x, y):
+    train_dataset = data_utils.TensorDataset(torch.tensor(x, dtype=torch.float, device=device),
+                                             torch.tensor(y, dtype=torch.float, device=device))
+    train_loader = DataLoader(train_dataset, batch_size=batchSize)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    criterion = nn.BCELoss()
+    train_loss = []
+
+    for epoch in range(epochs):
+        cur_train_loss = train_epoch(model, optimizer, train_loader, criterion)
+        # save values in lists
+        train_loss.append(cur_train_loss)
 
     return model
+
+

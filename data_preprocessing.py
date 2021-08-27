@@ -21,8 +21,6 @@ def fill_missing_values(df):
     return df.apply(lambda col: col.fillna(value=col.median()), axis=0)
 
 
-
-
 def normalize_columns(df):
     # normalize features between 0 and 1
     return df.apply(lambda col: (col - col.min()) / (col.max() - col.min()), axis=0)

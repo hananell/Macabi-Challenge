@@ -35,7 +35,6 @@ class Classifier(nn.Module):
             nn.Sigmoid(),
         )
 
-
     def forward(self, x):
         x = self.layer1(x)
         x = self.layer2(x)
@@ -44,3 +43,11 @@ class Classifier(nn.Module):
         x = self.layer5(x)
         x = self.layer6(x)
         return x
+
+    def weight_reset(self):
+        for layers in self.children():
+            for layer in layers:
+                if hasattr(layer, 'reset_parameters'):
+                    layer.reset_parameters()
+
+
