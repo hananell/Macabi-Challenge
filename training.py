@@ -1,13 +1,10 @@
 import torch
-from numpy.ma import copy
 from torch import nn
 from sklearn.model_selection import KFold
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import torch.utils.data as data_utils
 import numpy as np
-from imblearn.over_sampling import RandomOverSampler
-
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -95,9 +92,7 @@ def cross_validate(model, x, y):
         # split data to train and validation
         x_train, x_val, y_train, y_val = x.iloc[train_idx].values, x.iloc[val_idx].values, y.iloc[train_idx].values, \
                                          y.iloc[val_idx].values
-        if oversampling:
-            ros = RandomOverSampler(random_state=42)
-            x_train, y_train = ros.fit_resample(x_train, y_train)
+        # if oversampling:
         # x_train, y_train = duplicate_ills(x_train, y_train)
 
         # create tensors from Dataframes, and DataLoaders
@@ -133,8 +128,8 @@ def cross_validate(model, x, y):
 
 
 def fit(model, x, y):
-    train_dataset = data_utils.TensorDataset(torch.tensor(x, dtype=torch.float, device=device),
-                                             torch.tensor(y, dtype=torch.float, device=device))
+    train_dataset = data_utils.TensorDataset(torch.tensor(x.values, dtype=torch.float, device=device),
+                                             torch.tensor(y.values, dtype=torch.float, device=device))
     train_loader = DataLoader(train_dataset, batch_size=batchSize)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
     criterion = nn.BCELoss()
@@ -144,6 +139,8 @@ def fit(model, x, y):
         cur_train_loss = train_epoch(model, optimizer, train_loader, criterion)
         # save values in lists
         train_loss.append(cur_train_loss)
+
+    print(train_loss)
 
     return model
 

@@ -11,12 +11,11 @@ startTime = time.time()
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 data_path = "diab_ckd_data.csv"
 
-
 if __name__ == '__main__':
     # read and encode data
     data = pd.read_csv(data_path)
 
-    IDs = data.pop("IDS").tolist()      # save IDs for test. and we don't need them till then
+    IDs = data.pop("IDS").tolist()  # save IDs for test. and we don't need them till then
     encoded_data, encoded_target = encode_data(data)
 
     # split the data to train and test
@@ -24,11 +23,11 @@ if __name__ == '__main__':
 
     mpl_classifier = model.Classifier(input_size=len(encoded_data.columns)).to(device)
 
-    # make models, then use them to predict labels of all the data
-    mean_trainloss, mean_valloss = training.cross_validate(mpl_classifier, x_train, y_train)
-    training.plotLoss(mean_trainloss, mean_valloss)
+    # k-fold cross validation for parameter tuning
+    # mean_trainloss, mean_valloss = training.cross_validate(mpl_classifier, x_train, y_train)
+    # training.plotLoss(mean_trainloss, mean_valloss)
 
-
+    training.fit(mpl_classifier, x_train, y_train)
     eval.predict(mpl_classifier, x_test, y_test, IDs)
 
     # print run time
